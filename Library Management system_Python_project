@@ -1,0 +1,521 @@
+"""
+Library Management System
+A console-based application to manage library books, issue/return books,
+search records, generate reports, and save/load data.
+
+Author: Rida Hafeez
+
+"""
+
+import os
+
+# ============================================
+# GLOBAL VARIABLES
+# ============================================
+
+# Master list to store all books
+books = []
+
+# File name for saving/loading data
+DATA_FILE = "library_data.txt"
+
+
+# ============================================
+# DATA PERSISTENCE FUNCTIONS
+# ============================================
+
+def load_data():
+    """Load library records from the data file"""
+    global books
+    
+    try:
+        with open(DATA_FILE, 'r') as file:
+            lines = file.readlines()
+            
+            # Clear existing books
+            books = []
+            
+            # Skip header (first line)
+            for line in lines[1:]:
+                parts = line.strip().split(',')
+                
+                if len(parts) >= 6:
+                    book = {
+                        "book_id": parts[0],
+                        "title": parts[1],
+                        "author": parts[2],
+                        "category": parts[3],
+                        "quantity": int(parts[4]),
+                        "issued_count": int(parts[5])
+                    }
+                    books.append(book)
+            
+            print(f"Loaded {len(books)} books from {DATA_FILE}")
+            return True
+            
+    except FileNotFoundError:
+        print(f"{DATA_FILE} not found. Starting with empty library.")
+        return False
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        return False
+
+
+def save_data():
+    """Save library records to the data file"""
+    try:
+        with open(DATA_FILE, 'w') as file:
+            # Write header
+            file.write("book_id,title,author,category,quantity,issued_count\n")
+            
+            # Write each book
+            for book in books:
+                line = f"{book['book_id']},{book['title']},{book['author']},"
+                line += f"{book['category']},{book['quantity']},{book['issued_count']}\n"
+                file.write(line)
+        
+        print("Data saved successfully!")
+        return True
+    except Exception as e:
+        print(f"Error saving data: {e}")
+        return False
+
+
+# ============================================
+# CORE CRUD OPERATIONS
+# ============================================
+
+def add_book():
+    """Add a new book to the library"""
+    print("\n--- Add New Book ---")
+    
+    # Get Book ID
+    book_id = input("Enter Book ID: ")
+    
+    # Check if Book ID already exists
+    for book in books:
+        if book["book_id"] == book_id:
+            print("Book ID already exists!")
+            return
+    
+    # Get book details
+    title = input("Enter Book Title: ")
+    author = input("Enter Book Author: ")
+    category = input("Enter Book Category: ")
+    
+    # Get quantity with validation
+    while True:
+        try:
+            quantity = int(input("Enter Quantity: "))
+            if quantity < 0:
+                print("Quantity cannot be negative!")
+                continue
+            break
+        except ValueError:
+            print("Please enter a valid number!")
+    
+    # Create book dictionary
+    book = {
+        "book_id": book_id,
+        "title": title,
+        "author": author,
+        "category": category,
+        "quantity": quantity,
+        "issued_count": 0
+    }
+    
+    # Add to books list
+    books.append(book)
+    print(f"Book '{title}' added successfully!")
+
+
+def view_books():
+    """Display all books in a formatted manner"""
+    if not books:
+        print("\nNo books in the library!")
+        return
+    
+    print("\n" + "="*90)
+    print(f"{'ID':<10} {'Title':<30} {'Author':<20} {'Category':<15} {'Qty':<5} {'Issued':<6}")
+    print("-"*90)
+    
+    for book in books:
+        print(f"{book['book_id']:<10} {book['title']:<30} {book['author']:<20} "
+              f"{book['category']:<15} {book['quantity']:<5} {book['issued_count']:<6}")
+    
+    print("="*90)
+
+
+def display_book(book):
+    """Helper function to display a single book"""
+    print("\n--- Book Details ---")
+    print(f"ID: {book['book_id']}")
+    print(f"Title: {book['title']}")
+    print(f"Author: {book['author']}")
+    print(f"Category: {book['category']}")
+    print(f"Quantity: {book['quantity']}")
+    print(f"Issued Count: {book['issued_count']}")
+
+
+def search_book():
+    """Search for book by ID or Title"""
+    print("\n--- Search Book ---")
+    print("1. Search by Book ID")
+    print("2. Search by Title")
+    
+    choice = input("Enter choice (1 or 2): ")
+    
+    if choice == "1":
+        book_id = input("Enter Book ID: ")
+        found = False
+        for book in books:
+            if book["book_id"] == book_id:
+                display_book(book)
+                found = True
+                break
+        if not found:
+            print("Book not found!")
+    
+    elif choice == "2":
+        title = input("Enter Book Title: ").lower()
+        found = False
+        for book in books:
+            if title in book["title"].lower():
+                display_book(book)
+                found = True
+        if not found:
+            print("No books found with that title!")
+    
+    else:
+        print("Invalid choice!")
+
+
+def update_book():
+    """Update book information"""
+    print("\n--- Update Book ---")
+    
+    book_id = input("Enter Book ID to update: ")
+    
+    for book in books:
+        if book["book_id"] == book_id:
+            print("\nLeave blank to keep current value")
+            
+            # Update Title
+            new_title = input(f"Current Title: {book['title']}\nNew Title: ")
+            if new_title:
+                book['title'] = new_title
+            
+            # Update Author
+            new_author = input(f"Current Author: {book['author']}\nNew Author: ")
+            if new_author:
+                book['author'] = new_author
+            
+            # Update Category
+            new_category = input(f"Current Category: {book['category']}\nNew Category: ")
+            if new_category:
+                book['category'] = new_category
+            
+            # Update Quantity
+            while True:
+                qty_input = input(f"Current Quantity: {book['quantity']}\nNew Quantity: ")
+                if qty_input == "":
+                    break
+                try:
+                    new_quantity = int(qty_input)
+                    if new_quantity < 0:
+                        print("Quantity cannot be negative!")
+                        continue
+                    book['quantity'] = new_quantity
+                    break
+                except ValueError:
+                    print("Please enter a valid number!")
+            
+            print("Book updated successfully!")
+            return
+    
+    print("Book not found!")
+
+
+def delete_book():
+    """Remove a book from the library"""
+    print("\n--- Delete Book ---")
+    
+    book_id = input("Enter Book ID to delete: ")
+    
+    for i, book in enumerate(books):
+        if book["book_id"] == book_id:
+            confirm = input(f"Are you sure you want to delete '{book['title']}'? (y/n): ")
+            if confirm.lower() == 'y':
+                books.pop(i)
+                print("Book deleted successfully!")
+            else:
+                print("Deletion cancelled!")
+            return
+    
+    print("Book not found!")
+
+
+# ============================================
+# ISSUE/RETURN OPERATIONS
+# ============================================
+
+def issue_book():
+    """Issue a book to a student"""
+    print("\n--- Issue Book ---")
+    
+    book_id = input("Enter Book ID: ")
+    
+    for book in books:
+        if book["book_id"] == book_id:
+            # Check availability
+            if book["quantity"] <= 0:
+                print("Book is not available!")
+                return
+            
+            # Get student name
+            student_name = input("Enter Student Name: ")
+            
+            # Issue the book
+            book["quantity"] -= 1
+            book["issued_count"] += 1
+            
+            print(f"Book '{book['title']}' issued to {student_name}")
+            print(f"Remaining copies: {book['quantity']}")
+            return
+    
+    print("Book not found!")
+
+
+def return_book():
+    """Return a book to the library"""
+    print("\n--- Return Book ---")
+    
+    book_id = input("Enter Book ID: ")
+    
+    for book in books:
+        if book["book_id"] == book_id:
+            # Increase quantity
+            book["quantity"] += 1
+            
+            print(f"Book '{book['title']}' returned successfully!")
+            print(f"Available copies: {book['quantity']}")
+            return
+    
+    print("Book not found!")
+
+
+# ============================================
+# STATISTICS
+# ============================================
+
+def generate_statistics():
+    """Generate and display library statistics"""
+    if not books:
+        print("\nNo books in the library!")
+        return
+    
+    print("\n" + "="*50)
+    print("LIBRARY STATISTICS")
+    print("="*50)
+    
+    # Total Books
+    total_books = len(books)
+    print(f"Total Books: {total_books}")
+    
+    # Total Categories
+    categories = set(book["category"] for book in books if book["category"])
+    print(f"Total Categories: {len(categories)}")
+    
+    # Most Issued Book
+    total_issued = sum(book["issued_count"] for book in books)
+    if total_issued > 0:
+        most_issued = max(books, key=lambda x: x["issued_count"])
+        print(f"Most Issued Book: {most_issued['title']} (Issued: {most_issued['issued_count']} times)")
+    else:
+        print("Most Issued Book: No books have been issued yet")
+    
+    # Available vs Issued Books
+    total_copies = sum(book["quantity"] for book in books)
+    total_issued = sum(book["issued_count"] for book in books)
+    print(f"Available Books: {total_copies}")
+    print(f"Issued Books: {total_issued}")
+    
+    print("="*50)
+
+
+# ============================================
+# LEETCODE-STYLE PRACTICE PROBLEMS
+# ============================================
+
+def reverse_titles(book_titles):
+    """
+    Problem 1: Reverse Book Titles
+    Concepts: Lists, Loops
+    """
+    return book_titles[::-1]
+
+
+def highest_quantity(books_list):
+    """
+    Problem 2: Find Book with Highest Quantity
+    Concepts: Dictionaries
+    """
+    if not books_list:
+        return None
+    return max(books_list, key=lambda x: x["quantity"])
+
+
+def merge_catalogs(cat1, cat2):
+    """
+    Problem 3: Merge Two Library Catalogs
+    Concepts: Dictionaries
+    """
+    result = cat1.copy()
+    result.update(cat2)
+    return result
+
+
+def count_category(categories, category):
+    """
+    Problem 4: Count Books in a Category
+    Concepts: Lists, Strings
+    """
+    return categories.count(category)
+
+
+def find_book_by_id(books_list, book_id):
+    """
+    Problem 5: Find Book by ID
+    Concepts: Lists, Dictionaries
+    """
+    for book in books_list:
+        if book["book_id"] == book_id:
+            return book
+    return None
+
+
+def run_practice_problems():
+    """Run the LeetCode-style practice problems"""
+    print("\n--- Practice Problems ---")
+    print("1. Reverse Book Titles")
+    print("2. Find Book with Highest Quantity")
+    print("3. Merge Two Library Catalogs")
+    print("4. Count Books in a Category")
+    print("5. Find Book by ID")
+    print("6. Back to Main Menu")
+    
+    choice = input("Enter choice (1-6): ")
+    
+    if choice == "1":
+        titles = [book["title"] for book in books]
+        print(f"Original Titles: {titles}")
+        reversed_titles = reverse_titles(titles)
+        print(f"Reversed Titles: {reversed_titles}")
+    
+    elif choice == "2":
+        if books:
+            highest = highest_quantity(books)
+            print(f"Book with Highest Quantity: {highest['title']} (Quantity: {highest['quantity']})")
+        else:
+            print("No books in the library!")
+    
+    elif choice == "3":
+        cat1 = {"A001": {"title": "Book 1", "author": "Author 1"}}
+        cat2 = {"B001": {"title": "Book 2", "author": "Author 2"}}
+        print(f"Catalog 1: {cat1}")
+        print(f"Catalog 2: {cat2}")
+        merged = merge_catalogs(cat1, cat2)
+        print(f"Merged Catalog: {merged}")
+    
+    elif choice == "4":
+        categories = [book["category"] for book in books]
+        category = input("Enter category to count: ")
+        count = count_category(categories, category)
+        print(f"Books in '{category}': {count}")
+    
+    elif choice == "5":
+        book_id = input("Enter Book ID: ")
+        found_book = find_book_by_id(books, book_id)
+        if found_book:
+            display_book(found_book)
+        else:
+            print("Book not found!")
+    
+    elif choice == "6":
+        return
+    
+    else:
+        print("Invalid choice!")
+
+
+# ============================================
+# MAIN MENU
+# ============================================
+
+def main():
+    """Main function to run the Library Management System"""
+    print("\n" + "="*50)
+    print("LIBRARY MANAGEMENT SYSTEM")
+    print("="*50)
+    
+    # Load existing data
+    load_data()
+    
+    while True:
+        print("\n" + "="*50)
+        print("MAIN MENU")
+        print("="*50)
+        print("1. Add Book")
+        print("2. View All Books")
+        print("3. Search Book")
+        print("4. Update Book")
+        print("5. Delete Book")
+        print("6. Issue Book")
+        print("7. Return Book")
+        print("8. Library Statistics")
+        print("9. Save Data")
+        print("10. Load Data")
+        print("11. Practice Problems")
+        print("12. Exit")
+        print("="*50)
+        
+        choice = input("Enter your choice (1-12): ")
+        
+        if choice == "1":
+            add_book()
+        elif choice == "2":
+            view_books()
+        elif choice == "3":
+            search_book()
+        elif choice == "4":
+            update_book()
+        elif choice == "5":
+            delete_book()
+        elif choice == "6":
+            issue_book()
+        elif choice == "7":
+            return_book()
+        elif choice == "8":
+            generate_statistics()
+        elif choice == "9":
+            save_data()
+        elif choice == "10":
+            load_data()
+        elif choice == "11":
+            run_practice_problems()
+        elif choice == "12":
+            save_choice = input("Save data before exiting? (y/n): ")
+            if save_choice.lower() == 'y':
+                save_data()
+            print("Thank you for using Library Management System!")
+            break
+        else:
+            print("Invalid choice! Please try again.")
+
+
+# ============================================
+# PROGRAM ENTRY POINT
+# ============================================
+
+if __name__ == "__main__":
+    main()

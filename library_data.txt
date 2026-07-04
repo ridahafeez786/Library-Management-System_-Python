@@ -1,0 +1,12 @@
+book_id,title,author,category,quantity,issued_count
+B001,Python Programming,John Doe,Programming,5,3
+B002,Data Structures and Algorithms,Jane Smith,Computer Science,3,2
+B003,Machine Learning Basics,Alan Turing,Artificial Intelligence,2,1
+B004,Web Development with Flask,Sarah Johnson,Web Development,4,0
+B005,Database Systems,Robert Brown,Database,2,2
+B006,Clean Code,Robert Martin,Software Engineering,3,1
+B007,The Pragmatic Programmer,David Thomas,Software Engineering,1,1
+B008,Introduction to Algorithms,Thomas Cormen,Computer Science,2,0
+B009,Design Patterns,Erich Gamma,Software Engineering,3,0
+B010,Computer Networking,James Kurose,Networking,2,1
+B011,Testing book,Rida hafeez,science,5,0
